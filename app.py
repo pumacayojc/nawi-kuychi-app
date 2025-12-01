@@ -1,109 +1,96 @@
 import math
 import random
+
 import matplotlib.pyplot as plt
 import streamlit as st
 
-# ===============================
-# CONFIG — MODO OSCURO
-# ===============================
+# ============================================================
+# CONFIGURACIÓN BÁSICA
+# ============================================================
 st.set_page_config(
     page_title="NAWI KUYCHI - Muestreo MIL-STD-414",
-    layout="wide"
+    page_icon="🧶",
+    layout="wide",
 )
 
-dark_css = """
-<style>
-[data-testid="stAppViewContainer"] {
-    background-color: #020617;
-}
-[data-testid="stSidebar"] {
-    background-color: #020617;
-}
-html, body, [class*="css"] {
-    color: #E5E7EB !important;
-    font-family: "Lato", sans-serif;
-}
-h1, h2, h3, h4, h5 {
-    color: #E5E7EB !important;
-}
-div.stButton > button {
-    background: linear-gradient(90deg, #2A9D8F, #E76F51);
-    color: white;
-    border: none;
-    border-radius: 999px;
-    font-size: 16px;
-    padding: 8px 18px;
-}
-input, textarea, select {
-    background-color: #0B1220 !important;
-    color: #F9FAFB !important;
-}
-[data-testid="stAlert"] {
-    background-color: #0B1220 !important;
-    border-radius: 0.75rem;
-}
-</style>
-"""
-st.markdown(dark_css, unsafe_allow_html=True)
-
-# ===============================
-# LOGO SVG + HEADER
-# ===============================
+# Logo simple NAWI KUYCHI en SVG (opcional)
 logo_svg = """
-<div style="display:flex;align-items:center;gap:30px;margin-bottom:30px;">
-<svg width="180" height="180" viewBox="0 0 620 260">
-<circle cx="120" cy="130" r="78" stroke="#F9FAFB" stroke-width="6" fill="none"/>
-<path d="M70 120 C90 100, 125 85, 165 110" stroke="#F9FAFB" stroke-width="4" fill="none"/>
-<path d="M75 140 C100 120, 130 110, 175 135" stroke="#F9FAFB" stroke-width="4" fill="none"/>
-<path d="M85 160 C115 140, 140 135, 185 150" stroke="#F9FAFB" stroke-width="4" fill="none"/>
-<path d="M90 100 C125 90, 155 105, 175 125" stroke="#F9FAFB" stroke-width="4" fill="none"/>
-<path d="M95 185 C130 160, 160 155, 190 175" stroke="#F9FAFB" stroke-width="4" fill="none"/>
-<path d="M95 170 C180 160, 260 120, 345 115" stroke="#2A9D8F" stroke-width="6"/>
-<path d="M100 175 C190 170, 275 150, 360 145" stroke="#E9C46A" stroke-width="6"/>
-<path d="M105 180 C200 180, 285 175, 375 165" stroke="#E76F51" stroke-width="6"/>
+<svg width="260" height="120" viewBox="0 0 620 260" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="130" r="78" stroke="#E9C46A" stroke-width="6" fill="none"/>
+  <path d="M70 120 C90 100, 125 85, 165 110" stroke="#2A9D8F" stroke-width="4" fill="none"/>
+  <path d="M75 140 C100 120, 130 110, 175 135" stroke="#2A9D8F" stroke-width="4" fill="none"/>
+  <path d="M85 160 C115 140, 140 135, 185 150" stroke="#E76F51" stroke-width="4" fill="none"/>
+  <path d="M90 100 C125 90, 155 105, 175 125" stroke="#E76F51" stroke-width="4" fill="none"/>
+  <path d="M95 185 C130 160, 160 155, 190 175" stroke="#E9C46A" stroke-width="4" fill="none"/>
+  <path d="M95 170 C180 160, 260 120, 345 115" stroke="#2A9D8F" stroke-width="6" fill="none"/>
+  <path d="M100 175 C190 170, 275 150, 360 145" stroke="#E9C46A" stroke-width="6" fill="none"/>
+  <path d="M105 180 C200 180, 285 175, 375 165" stroke="#E76F51" stroke-width="6" fill="none"/>
+  <text x="395" y="120" font-family="Montserrat, sans-serif" font-weight="600" font-size="30" fill="#F4F4F4">
+    NAWI KUYCHI
+  </text>
+  <text x="395" y="155" font-family="Lato, sans-serif" font-size="18" fill="#E9C46A">
+    Medimos para crear valor.
+  </text>
 </svg>
-<div style="line-height:1.2">
-<h1 style="font-weight:700;margin:0;color:#F9FAFB;">APLICATIVO NAWI KUYCHI</h1>
-<p style="margin-top:6px;color:#E5E7EB;">Muestreo MIL-STD-414 — Medimos para crear valor.</p>
-</div>
-</div>
 """
-st.markdown(logo_svg, unsafe_allow_html=True)
 
-# ===============================
-# FUNCIONES AUXILIARES
-# ===============================
+st.markdown(
+    f"""
+<div style="display:flex;align-items:center;gap:1rem;">
+  {logo_svg}
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
-def normal_cdf(z):
-    return 0.5 * (1 + math.erf(z / math.sqrt(2)))
+st.title("APLICATIVO NAWI KUYCHI – Muestreo MIL-STD-414 para pesado de ovillos")
 
-def generar_pesos(n, nominal, LI, LS):
-    sigma = (LS - LI) / 6 if LS > LI else abs(nominal * 0.03)
-    return [round(random.gauss(nominal, sigma), 2) for _ in range(n)]
+st.markdown(
+    """
+Esta herramienta permite:
+- Seleccionar **nivel de inspección**, **tamaño de lote** y **NCA** (AQL).
+- Obtener la **letra del plan**, el tamaño de muestra **n** y el valor **M (k)**.
+- Registrar o simular pesos de la muestra.
+- Calcular **media, desviación, índices Z**, porcentaje fuera de especificación y decisión de aceptación/rechazo del lote.
+"""
+)
 
-# ===============================
-# TABLAS MIL-STD-414
-# ===============================
-
+# ============================================================
+# 1. TABLA RANGOS LOTE -> LETRA
+# ============================================================
 rangos = [
-    (3, 8,     {'I':'B', 'II':'B', 'III':'B', 'IV':'B', 'V':'C'}),
-    (9, 15,    {'I':'B', 'II':'B', 'III':'B', 'IV':'B', 'V':'D'}),
-    (16, 25,   {'I':'B', 'II':'B', 'III':'B', 'IV':'C', 'V':'E'}),
-    (26, 40,   {'I':'B', 'II':'B', 'III':'B', 'IV':'D', 'V':'F'}),
-    (41, 65,   {'I':'B', 'II':'B', 'III':'C', 'IV':'E', 'V':'G'}),
-    (66, 110,  {'I':'B', 'II':'B', 'III':'D', 'IV':'F', 'V':'H'}),
-    (111, 180, {'I':'B', 'II':'C', 'III':'E', 'IV':'G', 'V':'I'}),
-    (181, 300, {'I':'B', 'II':'D', 'III':'F', 'IV':'H', 'V':'J'}),
-    (301, 500, {'I':'C', 'II':'E', 'III':'G', 'IV':'I', 'V':'K'}),
-    (501, 800, {'I':'D', 'II':'F', 'III':'H', 'IV':'J', 'V':'L'}),
-    (801, 1300,{'I':'E', 'II':'G', 'III':'I', 'IV':'K', 'V':'L'}),
-    (1301, 3200,{'I':'F', 'II':'H', 'III':'J', 'IV':'L', 'V':'M'}),
-    (3201, 8000,{'I':'G', 'II':'I', 'III':'L', 'IV':'M', 'V':'N'}),
-    (8001, 22000,{'I':'H', 'II':'J', 'III':'M', 'IV':'N', 'V':'O'}),
-    (22001, 110000,{'I':'I', 'II':'K', 'III':'N', 'IV':'O', 'V':'P'}),
-    (110001, 550000,{'I':'I', 'II':'K', 'III':'O', 'IV':'P', 'V':'Q'}),
-    (550001, float('inf'),{'I':'I', 'II':'K', 'III':'P', 'IV':'Q', 'V':'Q'}),
+    (3, 8,     {'I': 'B', 'II': 'B', 'III': 'B', 'IV': 'B', 'V': 'C'}),
+    (9, 15,    {'I': 'B', 'II': 'B', 'III': 'B', 'IV': 'B', 'V': 'D'}),
+    (16, 25,   {'I': 'B', 'II': 'B', 'III': 'B', 'IV': 'C', 'V': 'E'}),
+    (26, 40,   {'I': 'B', 'II': 'B', 'III': 'B', 'IV': 'D', 'V': 'F'}),
+    (41, 65,   {'I': 'B', 'II': 'B', 'III': 'C', 'IV': 'E', 'V': 'G'}),
+    (66, 110,  {'I': 'B', 'II': 'B', 'III': 'D', 'IV': 'F', 'V': 'H'}),
+    (111, 180, {'I': 'B', 'II': 'C', 'III': 'E', 'IV': 'G', 'V': 'I'}),
+    (181, 300, {'I': 'B', 'II': 'D', 'III': 'F', 'IV': 'H', 'V': 'J'}),
+    (301, 500, {'I': 'C', 'II': 'E', 'III': 'G', 'IV': 'I', 'V': 'K'}),
+    (501, 800, {'I': 'D', 'II': 'F', 'III': 'H', 'IV': 'J', 'V': 'L'}),
+    (801, 1300,{'I': 'E', 'II': 'G', 'III': 'I', 'IV': 'K', 'V': 'L'}),
+    (1301, 3200,{'I': 'F', 'II': 'H', 'III': 'J', 'IV': 'L', 'V': 'M'}),
+    (3201, 8000,{'I': 'G', 'II': 'I', 'III': 'L', 'IV': 'M', 'V': 'N'}),
+    (8001, 22000,{'I': 'H', 'II': 'J', 'III': 'M', 'IV': 'N', 'V': 'O'}),
+    (22001, 110000,{'I': 'I', 'II': 'K', 'III': 'N', 'IV': 'O', 'V': 'P'}),
+    (110001, 550000,{'I': 'I', 'II': 'K', 'III': 'O', 'IV': 'P', 'V': 'Q'}),
+    (550001, float('inf'),{'I': 'I', 'II': 'K', 'III': 'P', 'IV': 'Q', 'V': 'Q'}),
 ]
+
+
+def obtener_letra_muestreo(nivel, tam_lote):
+    for minimo, maximo, letras in rangos:
+        if minimo <= tam_lote <= maximo:
+            return letras[nivel]
+    return None
+
+
+# ============================================================
+# 2. TABLA LETRA -> n Y k POR NCA (inspección normal)
+# ============================================================
+aql_keys = ["0.04", "0.065", "0.1", "0.15", "0.25", "0.4", "0.65", "1",
+            "1.5", "2.5", "4", "6.5", "10", "15"]
 
 tabla_k = {
     "B": {"muestra": 3,
@@ -188,130 +175,199 @@ tabla_k = {
           "6.5": 9.81, "10": 14.12, "15": 19.92}
 }
 
-def letra_plan(nivel, lote):
-    for lo, hi, tabla in rangos:
-        if lo <= lote <= hi:
-            return tabla[nivel]
-    return None
 
-# ===============================
-# SESSION STATE
-# ===============================
-if "paso" not in st.session_state:
-    st.session_state.paso = 1
-if "pesos" not in st.session_state:
-    st.session_state.pesos = []
+# ============================================================
+# 3. FUNCIONES AUXILIARES
+# ============================================================
+def normal_cdf(z: float) -> float:
+    """Función de distribución acumulada de N(0,1)."""
+    return 0.5 * (1 + math.erf(z / math.sqrt(2)))
 
-# ===============================
-# PASO 1 — SELECCIÓN DEL PLAN
-# ===============================
-def paso1():
-    st.subheader("1️⃣ Selección del plan de muestreo")
-    col1, col2, col3 = st.columns(3)
 
-    nivel = col1.selectbox("Nivel de inspección", ["I","II","III"])
-    lote = col2.number_input("Tamaño de lote", min_value=3, value=25)
-    aql = col3.selectbox("NCA (AQL)", ["1","1.5","2.5","4"])
+def inicializar_estado():
+    if "plan_calculado" not in st.session_state:
+        st.session_state.plan_calculado = False
+    if "n" not in st.session_state:
+        st.session_state.n = 0
+    if "k" not in st.session_state:
+        st.session_state.k = None
 
-    letra = letra_plan(nivel, lote)
+
+inicializar_estado()
+
+# ============================================================
+# 4. PASO 1: SELECCIÓN DE PLAN
+# ============================================================
+st.subheader("1️⃣ Selección del plan de muestreo")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    nivel = st.selectbox("Nivel de inspección", ["I", "II", "III", "IV", "V"], index=1)
+with col2:
+    tam_lote = st.number_input("Tamaño de lote", min_value=3, value=1000, step=1)
+with col3:
+    aql = st.selectbox("NCA (AQL)", aql_keys, index=aql_keys.index("1"))
+
+if st.button("Calcular plan"):
+    letra = obtener_letra_muestreo(nivel, tam_lote)
     if letra is None:
-        st.error("No existe letra para ese rango.")
-        return
-
-    n = tabla_k[letra]["m"]
-    k = tabla_k[letra][aql]
-
-    st.success(f"Letra = {letra} → n = {n}, M(k)= {k if k else 'No definido'}")
-
-    if st.button("➡️ Continuar"):
-        st.session_state.plan = (nivel, lote, aql, letra, n, k)
-        st.session_state.paso = 2
-
-# ===============================
-# PASO 2 — INGRESO DE PESOS
-# ===============================
-def paso2():
-    st.subheader("2️⃣ Captura de pesos de la muestra")
-
-    nivel, lote, aql, letra, n, k = st.session_state.plan
-
-    col1, col2, col3 = st.columns(3)
-    nominal = col1.number_input("Peso nominal", value=100.0, step=0.1)
-    LI = col2.number_input("Límite inferior", value=97.0)
-    LS = col3.number_input("Límite superior", value=103.0)
-
-    if st.button("🔁 Generar muestra aleatoria"):
-        st.session_state.pesos = generar_pesos(n, nominal, LI, LS)
-
-    st.write("📦 Ingrese o edite los pesos:")
-
-    nuevos = []
-    cols = st.columns(3)
-    for i in range(n):
-        v = cols[i%3].number_input(
-            f"P{i+1}",
-            value=st.session_state.pesos[i] if i<len(st.session_state.pesos) else nominal
-        )
-        nuevos.append(v)
-
-    st.session_state.pesos = nuevos
-
-    if st.button("➡️ Calcular"):
-        st.session_state.limites = (nominal, LI, LS)
-        st.session_state.paso = 3
-
-# ===============================
-# PASO 3 — RESULTADOS
-# ===============================
-def paso3():
-    st.subheader("3️⃣ Resultados")
-
-    pesos = st.session_state.pesos
-    nominal, LI, LS = st.session_state.limites
-    _, _, _, _, n, k = st.session_state.plan
-
-    X = sum(pesos)/n
-    S = math.sqrt(sum((p - X)**2 for p in pesos) / (n-1))
-
-    ZEI = (X - LI) / S
-    ZES = (LS - X) / S
-
-    pi = (1 - normal_cdf(ZEI)) * 100
-    ps = (1 - normal_cdf(ZES)) * 100
-    p = pi + ps
-
-    st.write(f"📌 Media = {X:.4f}")
-    st.write(f"📌 Desviación σ = {S:.4f}")
-    st.write(f"📌 Z (inf) = {ZEI:.3f}")
-    st.write(f"📌 Z (sup) = {ZES:.3f}")
-    st.write(f"📌 Defectuosos estimados = {p:.3f}%")
-
-    if k is not None:
-        if p <= k:
-            st.success("✅ ACEPTAR LOTE")
+        st.error("No se encontró un rango de lote para esos datos.")
+    else:
+        fila = tabla_k.get(letra)
+        if fila is None:
+            st.error(f"Letra {letra} no está definida en la tabla de n y k.")
         else:
-            st.error("❌ RECHAZAR LOTE")
+            n = fila["muestra"]
+            k = fila.get(aql)
+            st.session_state.plan_calculado = True
+            st.session_state.n = n
+            st.session_state.k = k
 
-    fig, ax = plt.subplots(figsize=(7, 3))
-    ax.plot(pesos, marker="o", color="#60A5FA")
-    ax.axhline(LI, color="red", linestyle="--")
-    ax.axhline(LS, color="red", linestyle="--")
-    ax.axhline(nominal, color="green")
-    ax.set_title("Distribución de Pesos")
-    st.pyplot(fig)
+            st.success("Plan de muestreo calculado correctamente.")
+            st.markdown(
+                f"""
+**Resultados del plan:**
 
-    if st.button("🔁 Reiniciar"):
-    # limpiar estado y recargar la app
+- Nivel de inspección: **{nivel}**  
+- Tamaño de lote: **{tam_lote}**  
+- NCA: **{aql}**  
+- Letra del plan: **{letra}**  
+- Tamaño de muestra `n`: **{n}**  
+- Valor `M (k)` permitido (% defectuosos): **{k if k is not None else "No disponible para esta combinación"}**
+"""
+            )
+
+st.markdown("---")
+
+# ============================================================
+# 5. PASO 2: REGISTRO / SIMULACIÓN DE PESOS
+# ============================================================
+st.subheader("2️⃣ Registro de pesos de la muestra")
+
+col_nom, col_inf, col_sup = st.columns(3)
+with col_nom:
+    nominal = st.number_input("Peso nominal", value=100.0, step=0.01, format="%.2f")
+with col_inf:
+    lim_inf = st.number_input("Límite inferior", value=98.0, step=0.01, format="%.2f")
+with col_sup:
+    lim_sup = st.number_input("Límite superior", value=102.0, step=0.01, format="%.2f")
+
+if not st.session_state.plan_calculado:
+    st.info("Primero calcula el plan de muestreo para saber cuántos pesos registrar.")
+else:
+    n = st.session_state.n
+    st.write(f"**Tamaño de muestra n = {n}**")
+
+    # Generar o leer pesos
+    pesos = []
+    cols = st.columns(4)
+    for i in range(n):
+        col = cols[i % 4]
+        key = f"peso_{i}"
+        if key not in st.session_state:
+            st.session_state[key] = 0.0
+        with col:
+            st.session_state[key] = st.number_input(
+                f"P{i+1}",
+                key=key,
+                value=st.session_state[key],
+                step=0.01,
+                format="%.2f",
+            )
+        pesos.append(st.session_state[key])
+
+    col_btn1, col_btn2 = st.columns(2)
+
+    with col_btn1:
+        if st.button("Generar pesos aleatorios"):
+            if lim_sup > lim_inf:
+                sigma = (lim_sup - lim_inf) / 6.0
+            else:
+                sigma = max(0.1, abs(nominal) * 0.01)
+            for i in range(n):
+                key = f"peso_{i}"
+                valor = random.gauss(nominal, sigma)
+                st.session_state[key] = round(valor, 2)
+            st.experimental_rerun()
+
+    with col_btn2:
+        calcular = st.button("Calcular índices Z y decisión")
+
+    # ========================================================
+    # 6. PASO 3: CÁLCULO ESTADÍSTICO Y DECISIÓN
+    # ========================================================
+    if calcular:
+        pesos = [st.session_state[f"peso_{i}"] for i in range(n)]
+        if n < 2:
+            st.error("Se requieren al menos 2 observaciones para calcular la desviación estándar.")
+        else:
+            X_bar = sum(pesos) / n
+            S = math.sqrt(sum((x - X_bar) ** 2 for x in pesos) / (n - 1))
+
+            if S == 0:
+                st.error("La desviación estándar S = 0 (no hay variación en los pesos).")
+            else:
+                Z_ES = (lim_sup - X_bar) / S
+                Z_EI = (X_bar - lim_inf) / S
+
+                pi = (1 - normal_cdf(Z_EI)) * 100
+                ps = (1 - normal_cdf(Z_ES)) * 100
+                p_total = pi + ps
+
+                k = st.session_state.k
+                if k is None:
+                    decision = "No hay valor M (k) definido en la tabla para esta combinación."
+                    color = "orange"
+                else:
+                    if p_total <= k:
+                        decision = f"ACEPTAR el lote (p = {p_total:.3f}% ≤ M = {k:.3f}%)"
+                        color = "green"
+                    else:
+                        decision = f"RECHAZAR el lote (p = {p_total:.3f}% > M = {k:.3f}%)"
+                        color = "red"
+
+                st.markdown(
+                    f"""
+### 📊 Resultados estadísticos
+
+- n = **{n}**  
+- Media X̄ = **{X_bar:.4f}**  
+- Desviación estándar S = **{S:.4f}**  
+
+- Z_ES = **{Z_ES:.4f}**  
+- Z_EI = **{Z_EI:.4f}**  
+
+- pi (lado inferior) ≈ **{pi:.3f}%**  
+- ps (lado superior) ≈ **{ps:.3f}%**  
+- p = pi + ps ≈ **{p_total:.3f}%**
+
+<span style="color:{color};font-weight:bold;font-size:18px;">{decision}</span>
+""",
+                    unsafe_allow_html=True,
+                )
+
+                # ====== Gráfico ======
+                fig, ax = plt.subplots(figsize=(8, 4))
+                ax.scatter(range(1, n + 1), pesos, s=60, label="Pesos")
+                ax.axhline(lim_inf, color="red", linestyle="--", label="Límite inferior")
+                ax.axhline(lim_sup, color="red", linestyle="--", label="Límite superior")
+                ax.axhline(nominal, color="green", linestyle="-.", label="Nominal")
+                ax.axhline(X_bar, color="black", linestyle="-", linewidth=2, label="Media muestral")
+
+                ax.set_title("Distribución de pesos de la muestra")
+                ax.set_xlabel("Ítem de muestra")
+                ax.set_ylabel("Peso")
+                ax.grid(True)
+                ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+                fig.tight_layout()
+
+                st.pyplot(fig)
+
+st.markdown("---")
+
+# Botón de reinicio de toda la app
+if st.button("🔁 Reiniciar aplicación"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.rerun()
-
-# ===============================
-# RENDER WIZARD
-# ===============================
-if st.session_state.paso == 1:
-    paso1()
-elif st.session_state.paso == 2:
-    paso2()
-else:
-    paso3()
+    st.experimental_rerun()
