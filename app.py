@@ -13,37 +13,36 @@ st.set_page_config(
     layout="wide",
 )
 
-# Logo simple NAWI KUYCHI en SVG
-logo_svg = """
-<svg width="260" height="120" viewBox="0 0 620 260" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="120" cy="130" r="78" stroke="#E9C46A" stroke-width="6" fill="none"/>
-  <path d="M70 120 C90 100, 125 85, 165 110" stroke="#2A9D8F" stroke-width="4" fill="none"/>
-  <path d="M75 140 C100 120, 130 110, 175 135" stroke="#2A9D8F" stroke-width="4" fill="none"/>
-  <path d="M85 160 C115 140, 140 135, 185 150" stroke="#E76F51" stroke-width="4" fill="none"/>
-  <path d="M90 100 C125 90, 155 105, 175 125" stroke="#E76F51" stroke-width="4" fill="none"/>
-  <path d="M95 185 C130 160, 160 155, 190 175" stroke="#E9C46A" stroke-width="4" fill="none"/>
-  <path d="M95 170 C180 160, 260 120, 345 115" stroke="#2A9D8F" stroke-width="6" fill="none"/>
-  <path d="M100 175 C190 170, 275 150, 360 145" stroke="#E9C46A" stroke-width="6" fill="none"/>
-  <path d="M105 180 C200 180, 285 175, 375 165" stroke="#E76F51" stroke-width="6" fill="none"/>
-  <text x="395" y="120" font-family="Montserrat, sans-serif" font-weight="600" font-size="36" fill="#800000">
-    NAWI KUYCHI
-  </text>
-  <text x="395" y="155" font-family="Lato, sans-serif" font-size="36" fill="#E9C46A">
-    Medimos para crear valor.
-  </text>
-</svg>
-"""
-
+# Logo y título mejorado
 st.markdown(
-    f"""
-<div style="display:flex;align-items:center;gap:1rem;">
-  {logo_svg}
-</div>
-""",
-    unsafe_allow_html=True,
+    """
+    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 10px;">
+        <div style="flex: 0 0 auto;">
+            <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="45" stroke="#E9C46A" stroke-width="4" fill="none"/>
+                <path d="M25 40 C35 30, 45 25, 60 35" stroke="#2A9D8F" stroke-width="2" fill="none"/>
+                <path d="M30 50 C40 40, 50 35, 65 45" stroke="#2A9D8F" stroke-width="2" fill="none"/>
+                <path d="M35 60 C45 50, 55 45, 70 55" stroke="#E76F51" stroke-width="2" fill="none"/>
+                <path d="M30 35 C45 30, 55 35, 65 45" stroke="#E76F51" stroke-width="2" fill="none"/>
+                <path d="M40 70 C50 60, 60 55, 75 65" stroke="#E9C46A" stroke-width="2" fill="none"/>
+                <path d="M40 60 C55 55, 70 40, 85 35" stroke="#2A9D8F" stroke-width="3" fill="none"/>
+                <path d="M45 65 C60 60, 75 50, 90 45" stroke="#E9C46A" stroke-width="3" fill="none"/>
+                <path d="M50 70 C65 65, 80 60, 95 55" stroke="#E76F51" stroke-width="3" fill="none"/>
+            </svg>
+        </div>
+        <div style="flex: 1 1 auto;">
+            <h1 style="color: #800000; margin: 0; font-size: 2.5em; font-weight: 700;">NAWI KUYCHI</h1>
+            <p style="color: #E9C46A; font-size: 1.3em; margin: 5px 0 0 0; font-weight: 500;">
+                Medimos para crear valor.
+            </p>
+        </div>
+    </div>
+    <hr style="border: none; height: 2px; background: linear-gradient(to right, #2A9D8F, #E9C46A, #E76F51); margin: 10px 0 20px 0;">
+    """,
+    unsafe_allow_html=True
 )
 
-st.title("APLICATIVO NAWI KUYCHI – Muestreo MIL-STD-414 para pesado de ovillos")
+st.title("APLICATIVO – Muestreo MIL-STD-414 para pesado de ovillos")
 
 st.markdown(
     """
@@ -225,7 +224,7 @@ if st.button("Calcular plan", key="calcular_plan"):
             st.session_state.pesos = [0.0] * n
             st.session_state.pesos_input = {f"peso_{i}": 0.0 for i in range(n)}
             
-            st.success("Plan de muestreo calculado correctamente.")
+            st.success("✅ Plan de muestreo calculado correctamente.")
             st.markdown(
                 f"""
 **Resultados del plan:**
@@ -263,27 +262,30 @@ else:
     if len(st.session_state.pesos_input) != n:
         st.session_state.pesos_input = {f"peso_{i}": 0.0 for i in range(n)}
     
-    st.write(f"**Tamaño de muestra n = {n}**")
+    st.markdown(f"**Tamaño de muestra n = {n}**")
     
-    # Crear inputs para pesos
+    # Crear inputs para pesos - VERSIÓN CORREGIDA
+    st.markdown("**Ingrese los pesos:**")
+    
+    # Dividir en columnas
+    num_cols = 4 if n > 8 else (3 if n > 4 else 2)
+    cols = st.columns(num_cols)
+    
     pesos_actualizados = []
-    cols = st.columns(4)
     
     for i in range(n):
-        col = cols[i % 4]
-        key = f"peso_{i}"
-        
-        with col:
-            # Obtener valor actual o inicial
-            valor_actual = st.session_state.pesos_input.get(key, 0.0)
+        col_idx = i % num_cols
+        with cols[col_idx]:
+            key = f"peso_{i}"
             
-            # Crear input
+            # Crear widget de entrada
             nuevo_valor = st.number_input(
                 f"P{i+1}",
                 key=key,
-                value=float(valor_actual),
+                value=float(st.session_state.pesos_input.get(key, 0.0)),
                 step=0.01,
                 format="%.2f",
+                label_visibility="visible"
             )
             
             # Actualizar estado
@@ -296,39 +298,49 @@ else:
     col_btn1, col_btn2 = st.columns(2)
     
     with col_btn1:
-        if st.button("Generar pesos aleatorios", key="generar_pesos"):
-            if lim_sup > lim_inf:
-                sigma = (lim_sup - lim_inf) / 6.0
-            else:
-                sigma = max(0.1, abs(nominal) * 0.01)
-            
-            # Generar nuevos pesos
-            nuevos_pesos = []
-            for i in range(n):
-                valor = random.gauss(nominal, sigma)
-                nuevos_pesos.append(round(valor, 2))
-            
-            # Actualizar pesos_input en session_state
-            for i in range(n):
-                key = f"peso_{i}"
-                st.session_state.pesos_input[key] = nuevos_pesos[i]
-            
-            # Actualizar pesos
-            st.session_state.pesos = nuevos_pesos
-            
-            # Forzar actualización
-            st.rerun()
+        generar_clicked = st.button("🎲 Generar pesos aleatorios", key="generar_pesos")
     
     with col_btn2:
-        calcular = st.button("Calcular índices Z y decisión", key="calcular_decision")
+        calcular_clicked = st.button("📊 Calcular índices Z y decisión", key="calcular_decision")
+    
+    # Generar pesos aleatorios
+    if generar_clicked:
+        if lim_sup > lim_inf:
+            sigma = (lim_sup - lim_inf) / 6.0
+        else:
+            sigma = max(0.1, abs(nominal) * 0.01)
+        
+        # Generar nuevos pesos
+        nuevos_pesos = []
+        for i in range(n):
+            valor = random.gauss(nominal, sigma)
+            nuevo_valor = round(valor, 2)
+            nuevos_pesos.append(nuevo_valor)
+            
+            # Actualizar directamente en session_state usando el key único
+            st.session_state[f"peso_{i}"] = nuevo_valor
+        
+        # Actualizar pesos_input también
+        for i in range(n):
+            st.session_state.pesos_input[f"peso_{i}"] = nuevos_pesos[i]
+        
+        # Actualizar pesos
+        st.session_state.pesos = nuevos_pesos
+        
+        # Mostrar mensaje de éxito
+        st.success(f"✅ Se generaron {n} pesos aleatorios correctamente.")
+        st.rerun()
     
     # ========================================================
     # 6. PASO 3: CÁLCULO ESTADÍSTICO Y DECISIÓN
     # ========================================================
-    if calcular:
+    if calcular_clicked:
         pesos = st.session_state.pesos
         
-        if len(pesos) < 2:
+        # Verificar si hay valores ingresados
+        if all(p == 0.0 for p in pesos):
+            st.warning("⚠️ Todos los pesos están en cero. Ingrese valores o genere pesos aleatorios.")
+        elif len(pesos) < 2:
             st.error("Se requieren al menos 2 observaciones para calcular la desviación estándar.")
         else:
             X_bar = np.mean(pesos)
@@ -350,53 +362,102 @@ else:
                     color = "orange"
                 else:
                     if p_total <= k:
-                        decision = f"ACEPTAR el lote (p = {p_total:.3f}% ≤ M = {k:.3f}%)"
+                        decision = f"✅ **ACEPTAR** el lote (p = {p_total:.3f}% ≤ M = {k:.3f}%)"
                         color = "green"
                     else:
-                        decision = f"RECHAZAR el lote (p = {p_total:.3f}% > M = {k:.3f}%)"
+                        decision = f"❌ **RECHAZAR** el lote (p = {p_total:.3f}% > M = {k:.3f}%)"
                         color = "red"
                 
-                st.markdown(
-                    f"""
-### 📊 Resultados estadísticos
-
-- n = **{n}**  
-- Media X̄ = **{X_bar:.4f}**  
-- Desviación estándar S = **{S:.4f}**  
-
-- Z_ES = **{Z_ES:.4f}**  
-- Z_EI = **{Z_EI:.4f}**  
-
-- pi (lado inferior) ≈ **{pi:.3f}%**  
-- ps (lado superior) ≈ **{ps:.3f}%**  
-- p = pi + ps ≈ **{p_total:.3f}%**
-
-<span style="color:{color};font-weight:bold;font-size:18px;">{decision}</span>
-""",
-                    unsafe_allow_html=True,
-                )
+                # Mostrar resultados en un contenedor estilizado
+                st.markdown("---")
+                st.markdown("### 📊 Resultados estadísticos")
+                
+                col_res1, col_res2 = st.columns(2)
+                
+                with col_res1:
+                    st.markdown(f"""
+                    **Datos muestrales:**
+                    - n = **{n}**  
+                    - Media X̄ = **{X_bar:.4f}**  
+                    - Desviación estándar S = **{S:.4f}**
+                    """)
+                    
+                    st.markdown(f"""
+                    **Índices Z:**
+                    - Z_ES = **{Z_ES:.4f}**  
+                    - Z_EI = **{Z_EI:.4f}**
+                    """)
+                
+                with col_res2:
+                    st.markdown(f"""
+                    **Porcentajes fuera de especificación:**
+                    - pi (lado inferior) ≈ **{pi:.3f}%**  
+                    - ps (lado superior) ≈ **{ps:.3f}%**  
+                    - p = pi + ps ≈ **{p_total:.3f}%**
+                    
+                    **Valor M (k) de referencia:** **{k if k is not None else 'No disponible'}**
+                    """)
+                
+                # Mostrar decisión
+                st.markdown(f'<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid {color}; margin: 20px 0;">', unsafe_allow_html=True)
+                st.markdown(f'<h4 style="color: {color};">{decision}</h4>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
                 
                 # ====== Gráfico ======
-                fig, ax = plt.subplots(figsize=(8, 4))
-                ax.scatter(range(1, n + 1), pesos, s=60, label="Pesos")
-                ax.axhline(lim_inf, color="red", linestyle="--", label="Límite inferior")
-                ax.axhline(lim_sup, color="red", linestyle="--", label="Límite superior")
-                ax.axhline(nominal, color="green", linestyle="-.", label="Nominal")
-                ax.axhline(X_bar, color="black", linestyle="-", linewidth=2, label="Media muestral")
+                fig, ax = plt.subplots(figsize=(10, 5))
                 
-                ax.set_title("Distribución de pesos de la muestra")
-                ax.set_xlabel("Ítem de muestra")
-                ax.set_ylabel("Peso")
-                ax.grid(True)
-                ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+                # Configurar colores
+                colors = plt.cm.Set3(np.linspace(0, 1, n))
+                
+                # Crear gráfico de dispersión
+                scatter = ax.scatter(range(1, n + 1), pesos, s=80, c=colors, 
+                                    edgecolors='black', alpha=0.8, label="Pesos muestrales")
+                
+                # Líneas de referencia
+                ax.axhline(lim_inf, color="red", linestyle="--", linewidth=1.5, label="Límite inferior")
+                ax.axhline(lim_sup, color="red", linestyle="--", linewidth=1.5, label="Límite superior")
+                ax.axhline(nominal, color="green", linestyle="-.", linewidth=1.5, label="Peso nominal")
+                ax.axhline(X_bar, color="blue", linestyle="-", linewidth=2, label="Media muestral")
+                
+                # Rellenar área de especificación
+                ax.fill_between(range(0, n + 2), lim_inf, lim_sup, alpha=0.1, color='green', label='Área de especificación')
+                
+                # Configurar gráfico
+                ax.set_title("Distribución de pesos de la muestra", fontsize=14, fontweight='bold')
+                ax.set_xlabel("Ítem de muestra", fontsize=12)
+                ax.set_ylabel("Peso", fontsize=12)
+                ax.grid(True, alpha=0.3)
+                ax.set_xticks(range(1, n + 1))
+                ax.set_xlim(0.5, n + 0.5)
+                
+                # Añadir anotaciones
+                for i, peso in enumerate(pesos, 1):
+                    ax.annotate(f'{peso:.2f}', (i, peso), textcoords="offset points", 
+                               xytext=(0,5), ha='center', fontsize=9)
+                
+                ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=10)
                 fig.tight_layout()
                 
                 st.pyplot(fig)
 
 st.markdown("---")
 
-# Botón de reinicio de toda la app
+# Botón de reinicio
 if st.button("🔁 Reiniciar aplicación", key="reiniciar"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
+    st.success("Aplicación reiniciada correctamente.")
     st.rerun()
+
+# Pie de página
+st.markdown(
+    """
+    <div style="text-align: center; margin-top: 30px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+        <p style="color: #666; font-size: 0.9em;">
+            <strong>NAWI KUYCHI</strong> - Sistema de muestreo MIL-STD-414<br>
+            © 2024 - Herramienta para control de calidad en pesado de ovillos
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
