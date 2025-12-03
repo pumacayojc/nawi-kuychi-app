@@ -1,8 +1,8 @@
 import math
 import random
-
 import matplotlib.pyplot as plt
 import streamlit as st
+import numpy as np
 
 # ============================================================
 # CONFIGURACIÓN BÁSICA
@@ -180,17 +180,17 @@ def normal_cdf(z: float) -> float:
     """Función de distribución acumulada de N(0,1)."""
     return 0.5 * (1 + math.erf(z / math.sqrt(2)))
 
-def inicializar_estado():
-    if "plan_calculado" not in st.session_state:
-        st.session_state.plan_calculado = False
-    if "n" not in st.session_state:
-        st.session_state.n = 0
-    if "k" not in st.session_state:
-        st.session_state.k = None
-    if "pesos" not in st.session_state:
-        st.session_state.pesos = []
-
-inicializar_estado()
+# Inicialización del estado
+if 'plan_calculado' not in st.session_state:
+    st.session_state.plan_calculado = False
+if 'n' not in st.session_state:
+    st.session_state.n = 0
+if 'k' not in st.session_state:
+    st.session_state.k = None
+if 'pesos' not in st.session_state:
+    st.session_state.pesos = []
+if 'pesos_input' not in st.session_state:
+    st.session_state.pesos_input = {}
 
 # ============================================================
 # 4. PASO 1: SELECCIÓN DE PLAN
@@ -206,7 +206,7 @@ with col2:
 with col3:
     aql = st.selectbox("NCA (AQL)", aql_keys, index=aql_keys.index("1"))
 
-if st.button("Calcular plan"):
+if st.button("Calcular plan", key="calcular_plan"):
     letra = obtener_letra_muestreo(nivel, tam_lote)
     if letra is None:
         st.error("No se encontró un rango de lote para esos datos.")
@@ -220,13 +220,11 @@ if st.button("Calcular plan"):
             st.session_state.plan_calculado = True
             st.session_state.n = n
             st.session_state.k = k
-
-            # reiniciar pesos y widgets de pesos
+            
+            # Reiniciar pesos
             st.session_state.pesos = [0.0] * n
-            for key in list(st.session_state.keys()):
-                if key.startswith("peso_input_"):
-                    del st.session_state[key]
-
+            st.session_state.pesos_input = {f"peso_{i}": 0.0 for i in range(n)}
+            
             st.success("Plan de muestreo calculado correctamente.")
             st.markdown(
                 f"""
@@ -260,89 +258,92 @@ if not st.session_state.plan_calculado:
     st.info("Primero calcula el plan de muestreo para saber cuántos pesos registrar.")
 else:
     n = st.session_state.n
-
-    # asegurar que la lista de pesos tenga longitud n
-    if len(st.session_state.pesos) != n:
-        st.session_state.pesos = [0.0] * n
-        for key in list(st.session_state.keys()):
-            if key.startswith("peso_input_"):
-                del st.session_state[key]
-
+    
+    # Asegurar que pesos_input tenga la longitud correcta
+    if len(st.session_state.pesos_input) != n:
+        st.session_state.pesos_input = {f"peso_{i}": 0.0 for i in range(n)}
+    
     st.write(f"**Tamaño de muestra n = {n}**")
-
-    pesos = []
+    
+    # Crear inputs para pesos
+    pesos_actualizados = []
     cols = st.columns(4)
+    
     for i in range(n):
         col = cols[i % 4]
-        key = f"peso_input_{i}"
-        inicial = st.session_state.pesos[i]
-
+        key = f"peso_{i}"
+        
         with col:
-            if key in st.session_state:
-                # ya existe el widget, Streamlit usará el valor del estado
-                v = st.number_input(
-                    f"P{i+1}",
-                    key=key,
-                    step=0.01,
-                    format="%.2f",
-                )
-            else:
-                # primera vez, usamos el valor inicial definido en la lista
-                v = st.number_input(
-                    f"P{i+1}",
-                    key=key,
-                    value=float(inicial),
-                    step=0.01,
-                    format="%.2f",
-                )
-
-        pesos.append(v)
-        st.session_state.pesos[i] = v  # sincronizar lista con lo que hay en pantalla
-
+            # Obtener valor actual o inicial
+            valor_actual = st.session_state.pesos_input.get(key, 0.0)
+            
+            # Crear input
+            nuevo_valor = st.number_input(
+                f"P{i+1}",
+                key=key,
+                value=float(valor_actual),
+                step=0.01,
+                format="%.2f",
+            )
+            
+            # Actualizar estado
+            st.session_state.pesos_input[key] = nuevo_valor
+            pesos_actualizados.append(nuevo_valor)
+    
+    # Actualizar lista de pesos
+    st.session_state.pesos = pesos_actualizados
+    
     col_btn1, col_btn2 = st.columns(2)
-
+    
     with col_btn1:
-        if st.button("Generar pesos aleatorios"):
+        if st.button("Generar pesos aleatorios", key="generar_pesos"):
             if lim_sup > lim_inf:
                 sigma = (lim_sup - lim_inf) / 6.0
             else:
                 sigma = max(0.1, abs(nominal) * 0.01)
-
-            nuevos = []
+            
+            # Generar nuevos pesos
+            nuevos_pesos = []
             for i in range(n):
                 valor = random.gauss(nominal, sigma)
-                nuevos.append(round(valor, 2))
-            st.session_state.pesos = nuevos
-            # limpiar widgets para que se reconstruyan con los nuevos valores
-            for key in list(st.session_state.keys()):
-                if key.startswith("peso_input_"):
-                    del st.session_state[key]
-            st.experimental_rerun()
-
+                nuevos_pesos.append(round(valor, 2))
+            
+            # Actualizar pesos_input en session_state
+            for i in range(n):
+                key = f"peso_{i}"
+                st.session_state.pesos_input[key] = nuevos_pesos[i]
+            
+            # Actualizar pesos
+            st.session_state.pesos = nuevos_pesos
+            
+            # Forzar actualización
+            st.rerun()
+    
     with col_btn2:
-        calcular = st.button("Calcular índices Z y decisión")
-
+        calcular = st.button("Calcular índices Z y decisión", key="calcular_decision")
+    
     # ========================================================
     # 6. PASO 3: CÁLCULO ESTADÍSTICO Y DECISIÓN
     # ========================================================
     if calcular:
         pesos = st.session_state.pesos
-        if n < 2:
+        
+        if len(pesos) < 2:
             st.error("Se requieren al menos 2 observaciones para calcular la desviación estándar.")
         else:
-            X_bar = sum(pesos) / n
-            S = math.sqrt(sum((x - X_bar) ** 2 for x in pesos) / (n - 1))
-
+            X_bar = np.mean(pesos)
+            S = np.std(pesos, ddof=1)  # Desviación estándar muestral
+            
             if S == 0:
                 st.error("La desviación estándar S = 0 (no hay variación en los pesos).")
             else:
                 Z_ES = (lim_sup - X_bar) / S
                 Z_EI = (X_bar - lim_inf) / S
-
+                
                 pi = (1 - normal_cdf(Z_EI)) * 100
                 ps = (1 - normal_cdf(Z_ES)) * 100
                 p_total = pi + ps
-
+                
                 k = st.session_state.k
                 if k is None:
                     decision = "No hay valor M (k) definido en la tabla para esta combinación."
@@ -354,7 +355,7 @@ else:
                     else:
                         decision = f"RECHAZAR el lote (p = {p_total:.3f}% > M = {k:.3f}%)"
                         color = "red"
-
+                
                 st.markdown(
                     f"""
 ### 📊 Resultados estadísticos
@@ -374,7 +375,7 @@ else:
 """,
                     unsafe_allow_html=True,
                 )
-
+                
                 # ====== Gráfico ======
                 fig, ax = plt.subplots(figsize=(8, 4))
                 ax.scatter(range(1, n + 1), pesos, s=60, label="Pesos")
@@ -382,20 +383,20 @@ else:
                 ax.axhline(lim_sup, color="red", linestyle="--", label="Límite superior")
                 ax.axhline(nominal, color="green", linestyle="-.", label="Nominal")
                 ax.axhline(X_bar, color="black", linestyle="-", linewidth=2, label="Media muestral")
-
+                
                 ax.set_title("Distribución de pesos de la muestra")
                 ax.set_xlabel("Ítem de muestra")
                 ax.set_ylabel("Peso")
                 ax.grid(True)
                 ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
                 fig.tight_layout()
-
+                
                 st.pyplot(fig)
 
 st.markdown("---")
 
 # Botón de reinicio de toda la app
-if st.button("🔁 Reiniciar aplicación"):
+if st.button("🔁 Reiniciar aplicación", key="reiniciar"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.experimental_rerun()
+    st.rerun()
