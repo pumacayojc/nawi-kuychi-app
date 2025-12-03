@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# Logo simple NAWI KUYCHI en SVG (opcional)
+# Logo simple NAWI KUYCHI en SVG
 logo_svg = """
 <svg width="260" height="120" viewBox="0 0 620 260" xmlns="http://www.w3.org/2000/svg">
   <circle cx="120" cy="130" r="78" stroke="#E9C46A" stroke-width="6" fill="none"/>
@@ -259,23 +259,23 @@ else:
     n = st.session_state.n
     st.write(f"**Tamaño de muestra n = {n}**")
 
-    # Generar o leer pesos
+    # --------- Campos de pesos ---------
     pesos = []
     cols = st.columns(4)
     for i in range(n):
         col = cols[i % 4]
         key = f"peso_{i}"
+        # Inicializar solo la primera vez
         if key not in st.session_state:
             st.session_state[key] = 0.0
         with col:
-            st.session_state[key] = st.number_input(
+            valor = st.number_input(
                 f"P{i+1}",
-                key=key,
-                value=st.session_state[key],
+                key=key,           # solo key, sin value
                 step=0.01,
                 format="%.2f",
             )
-        pesos.append(st.session_state[key])
+        pesos.append(valor)
 
     col_btn1, col_btn2 = st.columns(2)
 
