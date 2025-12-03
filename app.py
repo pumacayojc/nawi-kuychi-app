@@ -25,10 +25,10 @@ logo_svg = """
   <path d="M95 170 C180 160, 260 120, 345 115" stroke="#2A9D8F" stroke-width="6" fill="none"/>
   <path d="M100 175 C190 170, 275 150, 360 145" stroke="#E9C46A" stroke-width="6" fill="none"/>
   <path d="M105 180 C200 180, 285 175, 375 165" stroke="#E76F51" stroke-width="6" fill="none"/>
-  <text x="395" y="120" font-family="Montserrat, sans-serif" font-weight="600" font-size="30" fill="#F4F4F4">
+  <text x="395" y="120" font-family="Montserrat, sans-serif" font-weight="600" font-size="36" fill="#800000">
     NAWI KUYCHI
   </text>
-  <text x="395" y="155" font-family="Lato, sans-serif" font-size="18" fill="#E9C46A">
+  <text x="395" y="155" font-family="Lato, sans-serif" font-size="36" fill="#E9C46A">
     Medimos para crear valor.
   </text>
 </svg>
@@ -78,13 +78,11 @@ rangos = [
     (550001, float('inf'),{'I': 'I', 'II': 'K', 'III': 'P', 'IV': 'Q', 'V': 'Q'}),
 ]
 
-
 def obtener_letra_muestreo(nivel, tam_lote):
     for minimo, maximo, letras in rangos:
         if minimo <= tam_lote <= maximo:
             return letras[nivel]
     return None
-
 
 # ============================================================
 # 2. TABLA LETRA -> n Y k POR NCA (inspección normal)
@@ -175,14 +173,12 @@ tabla_k = {
           "6.5": 9.81, "10": 14.12, "15": 19.92}
 }
 
-
 # ============================================================
 # 3. FUNCIONES AUXILIARES
 # ============================================================
 def normal_cdf(z: float) -> float:
     """Función de distribución acumulada de N(0,1)."""
     return 0.5 * (1 + math.erf(z / math.sqrt(2)))
-
 
 def inicializar_estado():
     if "plan_calculado" not in st.session_state:
@@ -191,7 +187,8 @@ def inicializar_estado():
         st.session_state.n = 0
     if "k" not in st.session_state:
         st.session_state.k = None
-
+    if "pesos" not in st.session_state:
+        st.session_state.pesos = []
 
 inicializar_estado()
 
@@ -223,6 +220,12 @@ if st.button("Calcular plan"):
             st.session_state.plan_calculado = True
             st.session_state.n = n
             st.session_state.k = k
+
+            # reiniciar pesos y widgets de pesos
+            st.session_state.pesos = [0.0] * n
+            for key in list(st.session_state.keys()):
+                if key.startswith("peso_input_"):
+                    del st.session_state[key]
 
             st.success("Plan de muestreo calculado correctamente.")
             st.markdown(
@@ -257,25 +260,44 @@ if not st.session_state.plan_calculado:
     st.info("Primero calcula el plan de muestreo para saber cuántos pesos registrar.")
 else:
     n = st.session_state.n
+
+    # asegurar que la lista de pesos tenga longitud n
+    if len(st.session_state.pesos) != n:
+        st.session_state.pesos = [0.0] * n
+        for key in list(st.session_state.keys()):
+            if key.startswith("peso_input_"):
+                del st.session_state[key]
+
     st.write(f"**Tamaño de muestra n = {n}**")
 
-    # --------- Campos de pesos ---------
     pesos = []
     cols = st.columns(4)
     for i in range(n):
         col = cols[i % 4]
-        key = f"peso_{i}"
-        # Inicializar solo la primera vez
-        if key not in st.session_state:
-            st.session_state[key] = 0.0
+        key = f"peso_input_{i}"
+        inicial = st.session_state.pesos[i]
+
         with col:
-            valor = st.number_input(
-                f"P{i+1}",
-                key=key,           # solo key, sin value
-                step=0.01,
-                format="%.2f",
-            )
-        pesos.append(valor)
+            if key in st.session_state:
+                # ya existe el widget, Streamlit usará el valor del estado
+                v = st.number_input(
+                    f"P{i+1}",
+                    key=key,
+                    step=0.01,
+                    format="%.2f",
+                )
+            else:
+                # primera vez, usamos el valor inicial definido en la lista
+                v = st.number_input(
+                    f"P{i+1}",
+                    key=key,
+                    value=float(inicial),
+                    step=0.01,
+                    format="%.2f",
+                )
+
+        pesos.append(v)
+        st.session_state.pesos[i] = v  # sincronizar lista con lo que hay en pantalla
 
     col_btn1, col_btn2 = st.columns(2)
 
@@ -285,10 +307,16 @@ else:
                 sigma = (lim_sup - lim_inf) / 6.0
             else:
                 sigma = max(0.1, abs(nominal) * 0.01)
+
+            nuevos = []
             for i in range(n):
-                key = f"peso_{i}"
                 valor = random.gauss(nominal, sigma)
-                st.session_state[key] = round(valor, 2)
+                nuevos.append(round(valor, 2))
+            st.session_state.pesos = nuevos
+            # limpiar widgets para que se reconstruyan con los nuevos valores
+            for key in list(st.session_state.keys()):
+                if key.startswith("peso_input_"):
+                    del st.session_state[key]
             st.experimental_rerun()
 
     with col_btn2:
@@ -298,7 +326,7 @@ else:
     # 6. PASO 3: CÁLCULO ESTADÍSTICO Y DECISIÓN
     # ========================================================
     if calcular:
-        pesos = [st.session_state[f"peso_{i}"] for i in range(n)]
+        pesos = st.session_state.pesos
         if n < 2:
             st.error("Se requieren al menos 2 observaciones para calcular la desviación estándar.")
         else:
